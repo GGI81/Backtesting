@@ -1,7 +1,10 @@
 import talib
+import seaborn as sns
+import matplotlib.pyplot as plt
 from backtesting import Backtest, Strategy
 from backtesting.test import GOOG  # Google Data
-from backtesting.lib import crossover
+from backtesting.lib import crossover, plot_heatmaps
+
 
 # print(GOOG)
 """
@@ -35,7 +38,7 @@ class RsiOscillator(Strategy):
 
     rsi_window = 14
 
-    def init(self) -> None: # TODO FIND why only init()
+    def init(self) -> None:
         self.rsi = self.I(talib.RSI, self.data.Close, 14)  # How to build Indicators
         # RSI -> Relative Strength Index -> It takes as an argument the period in that case 14
 
@@ -49,16 +52,6 @@ bt = Backtest(GOOG, RsiOscillator, cash = 10_000)
 # BUILD IN BACKTEST CLASS ->  def __init__(self, data: pd.DataFrame, strategy: Type[Strategy], *, cash: float = 10_000, commission: float = .0, margin: float = 1., trade_on_close=False, hedging=False, exclusive_orders=False):
 
 # stats = bt.optimize(
-#     upper_bound = range(50, 85, 5),
-#     lower_bound = range(10, 45, 5),
-#     rsi_window = range(10, 30, 2),
-#     maximize = 'Sharpe Ratio',
-# ) # -> Searching for best of 490 configurations.
-# print(stats)
-# stats = bt.run() # Build in method display in CLI format
-
-# Example with a constraint
-# stats = bt.optimize(
 #     upper_bound = range(10, 85, 5),
 #     lower_bound = range(10, 85, 5),
 #     rsi_window = range(10, 30, 2),
@@ -66,17 +59,29 @@ bt = Backtest(GOOG, RsiOscillator, cash = 10_000)
 #     constraint = lambda param: param.upper_bound > param.lower_bound 
 # ) # -> Searching for best of 1050 configurations.
 # print(stats)
+# stats = bt.run() # Build in method display in CLI format
 
 
-stats = bt.optimize(
+stats, heatmap = bt.optimize(
     upper_bound = range(50, 85, 5),
     lower_bound = range(10, 45, 5),
-    rsi_window = range(10, 30, 2),
+    # rsi_window = range(10, 30, 1),  # 14
+    rsi_window = range(10, 45, 5),
     maximize = optim_func,
     constraint = lambda param: param.upper_bound > param.lower_bound,
-)   
-print(stats)
+    return_heatmap = True
+    # max_tries = 100  # There are definitely more than 100 tries but sets for 100
+    )
 
+print(heatmap)
+plot_heatmaps(heatmap, agg="mean")
+
+
+# hm = heatmap.groupby(['upper_bound', 'lower_bound']).mean().unstack()  # Groups for the CLI format output. If you add unstack you will get 2x2 matrix
+# sns.heatmap(hm, cmap="plasma")
+# plt.show()
+# print(hm)
 # print(stats)
-bt.plot() # filname -> https://kernc.github.io/backtesting.py/doc/backtesting/backtesting.html#gsc.tab=0
+# print(stats)
+# bt.plot() # filname -> https://kernc.github.io/backtesting.py/doc/backtesting/backtesting.html#gsc.tab=0
 
